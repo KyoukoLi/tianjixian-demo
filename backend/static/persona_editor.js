@@ -253,5 +253,13 @@
     if (storySaveBtn) storySaveBtn.addEventListener('click', () => StoryEditor.save());
     if (storyResetBtn) storyResetBtn.addEventListener('click', () => StoryEditor.reset());
     if (storyExportBtn) storyExportBtn.addEventListener('click', () => StoryEditor.export());
-  }, 100);
+
+    // 调试信息
+    const debug = document.getElementById('debugInfo');
+    if (debug) {
+      const formInputs = document.querySelectorAll('#personaEditor input, #personaEditor textarea, #personaEditor select');
+      debug.textContent = `✅ PE已加载 | 表单字段: ${formInputs.length} | 按钮: 保存${saveBtn?'✅':'❌'} 重置${resetBtn?'✅':'❌'}`;
+      debug.style.color = saveBtn ? '#34d399' : '#f87171';
+    }
+  }, 200);
 })();
