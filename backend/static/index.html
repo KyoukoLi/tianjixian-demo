@@ -72,6 +72,10 @@
 
   </main>
 
-  <script src="app.js"></script>
+  <script>
+  console.log('[天际线] Inline script running');
+  document.getElementById('debugLog').innerHTML = '<div style="color:#10b981">[天际线] 脚本已加载，API: ' + location.origin + '</div>';
+</script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
