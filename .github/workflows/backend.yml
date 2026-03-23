@@ -23,6 +23,6 @@ jobs:
         run: railway link --token ${{ secrets.RAILWAY_TOKEN }} ${{ secrets.RAILWAY_PROJECT_ID }}
 
       - name: Deploy
-        run: railway up --token ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --token ${{ secrets.RAILWAY_TOKEN }} --dockerfile
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
