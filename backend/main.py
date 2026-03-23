@@ -1,27 +1,40 @@
 """
 天际线 Demo — FastAPI 后端
 提供 SSE 流式接口 + 轮询接口 + 前端静态页面
+静态文件从内嵌 zip 解压到内存，确保每次部署都是最新版本
 """
 
 import asyncio
 import json
 import os
 import uuid
+import zipfile
+import io
 from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from mock_engine import generate as mock_generate, StreamEvent
+from static_assets import STATIC_ZIP
+import base64
 
-app = FastAPI(title="天际线 Demo API", version="0.2.0")
+app = FastAPI(title="天际线 Demo API", version="0.3.0")
 
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(STATIC_DIR):
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+# 解压静态文件到内存 dict: {路径: 内容}
+STATIC_FILES: Dict[str, bytes] = {}
+try:
+    zip_data = base64.b64decode(STATIC_ZIP)
+    with zipfile.ZipFile(io.BytesIO(zip_data)) as zf:
+        for name in zf.namelist():
+            if not name.endswith('/'):
+                STATIC_FILES['/' + name] = zf.read(name)
+    print(f"[天际线] Loaded {len(STATIC_FILES)} static files from embedded zip")
+except Exception as e:
+    print(f"[天际线] WARNING: Failed to load embedded static files: {e}")
+    STATIC_FILES = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,21 +71,44 @@ async def sse_generator(session_id: str, user_message: str, persona=None, story=
 
 @app.get("/")
 async def index():
-    index_path = os.path.join(STATIC_DIR, "index.html")
-    if os.path.exists(index_path):
-        with open(index_path, encoding="utf-8") as f:
-            return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache"})
-    return {"error": "index.html not found"}
+    content = STATIC_FILES.get('/static/index.html') or STATIC_FILES.get('/index.html', b'')
+    return HTMLResponse(content=content, headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/index.html")
+async def index_html():
+    return await index()
 
 
 @app.get("/api")
 async def api_info():
-    return {"service": "天际线 Demo API", "version": "0.2.0"}
+    return {
+        "service": "天际线 Demo API",
+        "version": "0.3.0",
+        "static_files": len(STATIC_FILES),
+        "files": list(STATIC_FILES.keys()),
+    }
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "0.3.0", "static": len(STATIC_FILES)}
+
+
+@app.get("/static/{path:path}")
+async def serve_static(path: str):
+    file_path = f'/static/{path}'
+    if file_path in STATIC_FILES:
+        content = STATIC_FILES[file_path]
+        if path.endswith('.js'):
+            return HTMLResponse(content=content, media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+        elif path.endswith('.css'):
+            return HTMLResponse(content=content, media_type="text/css", headers={"Cache-Control": "no-cache"})
+        elif path.endswith('.html'):
+            return HTMLResponse(content=content, headers={"Cache-Control": "no-cache"})
+        else:
+            return HTMLResponse(content=content, headers={"Cache-Control": "no-cache"})
+    return HTMLResponse(content="Not found", status_code=404)
 
 
 @app.post("/chat")
@@ -115,6 +151,7 @@ async def chat_poll(req: ChatRequest):
         "mode": "poll",
         "has_persona": req.persona is not None,
         "has_story": req.story is not None,
+        "version": "0.3.0",
     }
 
 
