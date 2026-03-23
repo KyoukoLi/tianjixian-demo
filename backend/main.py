@@ -1,24 +1,35 @@
 """
 天际线 Demo — FastAPI 后端
-提供 SSE 流式聊天接口
+提供 SSE 流式聊天接口 + 前端静态页面
 启动：uvicorn main:app --reload --port 8000
 """
 
 import asyncio
 import json
+import os
 import uuid
 from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import (
+    StreamingResponse,
+    HTMLResponse,
+    FileResponse,
+)
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from mock_engine import generate, StreamEvent
 
 app = FastAPI(title="天际线 Demo API", version="0.1.0")
 
-# CORS：允许前端任意来源访问（开发环境）
+# 挂载静态文件目录
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# CORS：允许前端任意来源访问
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -50,7 +61,6 @@ async def sse_generator(session_id: str, user_message: str):
     try:
         async for event in generate(session_id, user_message):
             yield format_sse(event)
-            # 刷新缓冲区，确保实时推送
             await asyncio.sleep(0.001)
     except Exception as e:
         error_event = StreamEvent(
@@ -68,8 +78,24 @@ async def sse_generator(session_id: str, user_message: str):
 # 接口
 # ─────────────────────────────────────────
 
-@app.get("/")
-async def root():
+@app.get("/", include_in_schema=False)
+async def index():
+    """返回前端页面"""
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as f:
+            content = f.read()
+        # 注入：API 地址使用当前请求的 origin（同源，无跨域）
+        content = content.replace(
+            "const getApiBase = () => {",
+            "const getApiBase = () => { return window.location.origin;"
+        )
+        return HTMLResponse(content=content)
+    return {"error": "index.html not found"}
+
+
+@app.get("/api")
+async def api_info():
     return {
         "service": "天际线 Demo API",
         "version": "0.1.0",
@@ -117,7 +143,7 @@ async def chat(req: ChatRequest):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",   # 禁用 Nginx 缓冲
+            "X-Accel-Buffering": "no",
         }
     )
 
