@@ -17,7 +17,7 @@ from emotion import EMOTION_DICT
 # MiniMax 配置
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
 MINIMAX_BASE_URL = "https://api.minimax.chat/v1"
-DEFAULT_MODEL = "abab6.5s-chat"
+DEFAULT_MODEL = "MiniMax-M2.5-highspeed"
 
 
 @dataclass
