@@ -218,17 +218,36 @@
     dom.freqCounter.className = 'freq' + (rem <= 1 ? ' danger' : rem <= 2 ? ' warn' : '');
   }
 
+  // ── 重置 ──
+  window.__reset = () => {
+    state.sessionId = crypto.randomUUID();
+    dom.chatMessages.innerHTML = '';
+    dom.messageInput.value = '';
+    dom.messageInput.style.height = 'auto';
+    dom.continueBtn.disabled = false;
+    dom.continueBtn.classList.remove('blocked');
+    dom.continueBtn.textContent = '继续';
+    state.continueTimestamps = [];
+    state.continueBlocked = false;
+    state.isStreaming = false;
+    dom.sendBtn.disabled = false;
+    clearTimeout(state._cooldownTimer);
+    setEmotion('neutral', null);
+    setStatus('已重置', 'ok');
+    updateFreqCounter();
+    log('会话已重置，新 session: ' + state.sessionId, 'tag');
+  };
+
   // ── 事件绑定 ──
-  // 同时暴露到 window 作为 fallback（HTML onclick 属性）
   window.__send = () => {
     const t = dom.messageInput.value.trim();
     dom.messageInput.value = '';
+    dom.messageInput.style.height = 'auto';
     if (t) sendMessage(t);
   };
   window.__continue = () => {
     if (checkContinue()) sendMessage('【继续】');
   };
-  // addEventListener 主绑定
   dom.sendBtn.addEventListener('click', window.__send);
 
   dom.messageInput.addEventListener('keydown', e => {

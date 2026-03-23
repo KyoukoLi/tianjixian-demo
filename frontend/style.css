@@ -84,7 +84,8 @@ body {
   padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 .emotion-icon { font-size: 32px; }
 .emotion-info { flex: 1; }
@@ -96,6 +97,16 @@ body {
   font-size: 11px; font-weight: 400; color: var(--text-dim);
 }
 .emotion-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.btn-reset {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 16px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-reset:hover { border-color: var(--purple-l); transform: rotate(180deg); }
+
 .emotion-status {
   font-size: 11px; padding: 3px 10px; border-radius: 20px;
   background: var(--surface); color: var(--text-dim); border: 1px solid var(--border);
