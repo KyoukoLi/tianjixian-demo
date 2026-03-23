@@ -17,11 +17,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel
 
-from mock_engine import generate as mock_generate, StreamEvent
 from static_assets import STATIC_ZIP
 import base64
 
-app = FastAPI(title="天际线 Demo API", version="0.3.0")
+app = FastAPI(title="天际线 Demo API", version="0.4.0")
 
 # 解压静态文件到内存 dict: {路径: 内容}
 STATIC_FILES: Dict[str, bytes] = {}
@@ -52,21 +51,37 @@ class ChatRequest(BaseModel):
     story: Optional[Dict[str, Any]] = None
 
 
-def format_sse(event: StreamEvent) -> str:
-    json_data = json.dumps(event.data, ensure_ascii=False)
-    return f"event: {event.event}\ndata: {json_data}\n\n"
+def format_sse(event_type: str, data: Dict) -> str:
+    json_data = json.dumps(data, ensure_ascii=False)
+    return f"event: {event_type}\ndata: {json_data}\n\n"
 
 
 async def sse_generator(session_id: str, user_message: str, persona=None, story=None):
     try:
-        async for event in mock_generate(session_id, user_message, persona, story):
-            yield format_sse(event)
+        async for ev in minimax_generate(session_id, user_message, persona, story):
+            yield format_sse(ev["event"], ev["data"])
             await asyncio.sleep(0.001)
     except Exception as e:
-        yield format_sse(StreamEvent(
-            event="error",
-            data={"code": "MODEL_ERROR", "message": str(e), "fallback_tag": "neutral"}
-        ))
+        yield format_sse("error", {
+            "code": "MODEL_ERROR",
+            "message": str(e),
+            "fallback_tag": "neutral",
+        })
+
+
+async def minimax_generate(session_id: str, user_message: str, persona=None, story=None):
+    """根据环境变量选择 MiniMax 引擎或 Mock 引擎"""
+    proxy_url = os.environ.get("MINIMAX_PROXY_URL", "")
+    api_key = os.environ.get("MINIMAX_API_KEY", "")
+
+    if proxy_url and api_key:
+        from minimax_engine import generate as minimax_gen
+        async for ev in minimax_gen(session_id, user_message, persona, story):
+            yield ev
+    else:
+        from mock_engine import generate as mock_gen
+        async for ev in mock_gen(session_id, user_message, persona, story):
+            yield ev
 
 
 @app.get("/")
@@ -82,17 +97,26 @@ async def index_html():
 
 @app.get("/api")
 async def api_info():
+    proxy = os.environ.get("MINIMAX_PROXY_URL", "")
+    api_key = os.environ.get("MINIMAX_API_KEY", "")
     return {
         "service": "天际线 Demo API",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "static_files": len(STATIC_FILES),
-        "files": list(STATIC_FILES.keys()),
+        "engine": "minimax" if (proxy and api_key) else "mock",
+        "proxy": proxy[:30] + "..." if proxy else "(未配置)",
     }
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.3.0", "static": len(STATIC_FILES)}
+    proxy = os.environ.get("MINIMAX_PROXY_URL", "")
+    return {
+        "status": "ok",
+        "version": "0.4.0",
+        "static": len(STATIC_FILES),
+        "engine": "minimax" if os.environ.get("MINIMAX_API_KEY") else "mock",
+    }
 
 
 @app.get("/static/{path:path}")
@@ -115,10 +139,11 @@ async def serve_static(path: str):
 async def chat(req: ChatRequest):
     if not req.message or not req.message.strip():
         return StreamingResponse(
-            iter([format_sse(StreamEvent(
-                event="error",
-                data={"code": "EMPTY_MESSAGE", "message": "消息不能为空", "fallback_tag": "neutral"}
-            ))]),
+            iter([format_sse("error", {
+                "code": "EMPTY_MESSAGE",
+                "message": "消息不能为空",
+                "fallback_tag": "neutral",
+            })]),
             media_type="text/event-stream",
         )
     session_id = req.session_id or str(uuid.uuid4())
@@ -142,8 +167,8 @@ async def chat_poll(req: ChatRequest):
     user_message = req.message.strip()
 
     events = []
-    async for event in mock_generate(session_id, user_message, req.persona, req.story):
-        events.append({"type": event.event, "data": event.data})
+    async for ev in minimax_generate(session_id, user_message, req.persona, req.story):
+        events.append({"type": ev["type"], "data": ev["data"]})
 
     return {
         "session_id": session_id,
@@ -151,7 +176,7 @@ async def chat_poll(req: ChatRequest):
         "mode": "poll",
         "has_persona": req.persona is not None,
         "has_story": req.story is not None,
-        "version": "0.3.0",
+        "version": "0.4.0",
     }
 
 
