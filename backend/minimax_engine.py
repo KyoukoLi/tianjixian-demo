@@ -124,7 +124,7 @@ async def generate(
         "messages": messages,
         "max_tokens": 256,
         "temperature": 0.9,
-        "stream": True,
+        "stream": False,  # 非流式，返回普通 JSON
     }
 
     full_text = ""
@@ -141,29 +141,20 @@ async def generate(
                     yield ev
                 return
 
-            text = response.text
-            for line in text.splitlines():
-                line = line.strip()
-                if not line or not line.startswith("data:"):
-                    continue
-                data_str = line[5:].strip()
-                if data_str == "[DONE]":
-                    break
-                try:
-                    chunk = json.loads(data_str)
-                    choices = chunk.get("choices", [])
-                    if choices:
-                        delta = choices[0].get("delta", {})
-                        content = delta.get("content", "")
-                        if content:
-                            full_text += content
-                            yield {
-                                "type": "chunk",
-                                "event": "chunk",
-                                "data": {"text": content, "is_final": False},
-                            }
-                except json.JSONDecodeError:
-                    continue
+            # 非流式响应：直接解析 JSON
+            resp_data = response.json()
+            choices = resp_data.get("choices", [])
+            if choices:
+                message = choices[0].get("message", {})
+                full_text = message.get("content", "")
+                # 逐字符模拟打字效果
+                for i, ch in enumerate(full_text):
+                    yield {
+                        "type": "chunk",
+                        "event": "chunk",
+                        "data": {"text": ch, "is_final": i == len(full_text) - 1},
+                    }
+                    await asyncio.sleep(0.01)
 
     except Exception as e:
         yield {"type": "error", "event": "error", "data": {
