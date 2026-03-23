@@ -115,6 +115,12 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  // ── 快速情绪 ──
+  window.qeSend = function(action) {
+    dom.messageInput.value = action;
+    dom.messageInput.focus();
+  };
+
   // ── 诊断面板折叠 ──
   window.toggleDebug = function() {
     const panel = dom.debugPanel;
@@ -128,6 +134,7 @@
     if (state.isStreaming || !message.trim()) return;
     state.isStreaming = true;
     dom.sendBtn.disabled = true;
+    dom.sendBtn.textContent = '···';
     dom.continueBtn.disabled = true;
     setStatus('思考中...', 'wait');
     removeThinking();
@@ -136,10 +143,14 @@
     const aiEl = addMessage('ai', '', true);
     log('发送: ' + message, 'info');
 
+    const persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
+    const story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+    log('发送: ' + message + (persona ? ` [角色:${persona.name || '未命名'}]` : ''), 'info');
+
     fetch(CONFIG.API_BASE + '/chat/poll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, session_id: state.sessionId }),
+      body: JSON.stringify({ message, session_id: state.sessionId, persona, story }),
     }).then(r => {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -158,6 +169,7 @@
             break;
           case 'done':
             full = ev.data.full_text || full;
+            setEmotion(ev.data.emotion_tag, ev.data.confidence);
             log('完成: ' + full, 'tag');
             break;
           case 'error':
@@ -175,6 +187,7 @@
     }).finally(() => {
       state.isStreaming = false;
       dom.sendBtn.disabled = false;
+      dom.sendBtn.textContent = '发送';
       dom.continueBtn.disabled = state.continueBlocked;
     });
   }
@@ -272,6 +285,7 @@
   updateFreqCounter();
   log('天际线 Demo 初始化完成', 'tag');
   log('API: ' + CONFIG.API_BASE, 'info');
+  log('模型: MiniMax-M2.5-highspeed', 'tag');
   log('提示：发送 *动作* 语法可触发情绪渲染', 'info');
 
   // 启动时健康检查

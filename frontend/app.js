@@ -143,10 +143,14 @@
     const aiEl = addMessage('ai', '', true);
     log('发送: ' + message, 'info');
 
+    const persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
+    const story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+    log('发送: ' + message + (persona ? ` [角色:${persona.name || '未命名'}]` : ''), 'info');
+
     fetch(CONFIG.API_BASE + '/chat/poll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, session_id: state.sessionId }),
+      body: JSON.stringify({ message, session_id: state.sessionId, persona, story }),
     }).then(r => {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
