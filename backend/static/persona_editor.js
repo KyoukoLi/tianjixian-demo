@@ -238,4 +238,20 @@
     try { currentPersona = { ...DEFAULT_PERSONA, ...JSON.parse(saved) }; } catch(e) {}
   }
   render();
+
+  // 按钮事件（等 DOM 就绪）
+  setTimeout(() => {
+    const saveBtn = document.getElementById('peSaveBtn');
+    const resetBtn = document.getElementById('peResetBtn');
+    const exportBtn = document.getElementById('peExportBtn');
+    if (saveBtn) saveBtn.addEventListener('click', () => PersonaEditor.save());
+    if (resetBtn) resetBtn.addEventListener('click', () => PersonaEditor.reset());
+    if (exportBtn) exportBtn.addEventListener('click', () => PersonaEditor.export());
+    const storySaveBtn = document.getElementById('stSaveBtn');
+    const storyResetBtn = document.getElementById('stResetBtn');
+    const storyExportBtn = document.getElementById('stExportBtn');
+    if (storySaveBtn) storySaveBtn.addEventListener('click', () => StoryEditor.save());
+    if (storyResetBtn) storyResetBtn.addEventListener('click', () => StoryEditor.reset());
+    if (storyExportBtn) storyExportBtn.addEventListener('click', () => StoryEditor.export());
+  }, 100);
 })();

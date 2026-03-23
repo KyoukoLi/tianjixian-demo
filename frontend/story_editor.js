@@ -95,9 +95,9 @@
       </div>
 
       <div class="pe-actions">
-        <button class="pe-btn-pe" onclick="StoryEditor.save()">💾 保存故事</button>
-        <button class="pe-btn-ghost" onclick="StoryEditor.reset()">🔄 重置</button>
-        <button class="pe-btn-ghost" onclick="StoryEditor.export()">📋 导出</button>
+        <button class="pe-btn-pe" id="stSaveBtn">💾 保存故事</button>
+        <button class="pe-btn-ghost" id="stResetBtn">🔄 重置</button>
+        <button class="pe-btn-ghost" id="stExportBtn">📋 导出</button>
       </div>
 
       <div class="pe-preview">
