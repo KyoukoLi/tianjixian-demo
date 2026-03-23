@@ -1,71 +1,45 @@
-# 天际线 Demo — 引擎实现规格
+# 天际线 Demo — 实现规格
 
-## 1. 目标
+## 当前状态
 
-跑通"视+听+文三路并发"的核心交互引擎，用 Mock 数据验证前端并发调度 + 降级策略 + 频控逻辑。
-
-## 2. 技术选型
-
-| 组件 | 技术 | 说明 |
+| 模块 | 状态 | 说明 |
 |------|------|------|
-| 后端 | Python 3.10+ / FastAPI | SSE 流式输出 |
-| 前端 | 原生 HTML/CSS/JS | 无框架依赖，调试最轻 |
-| 通信 | Server-Sent Events (SSE) | text/event-stream |
-| Mock | 后端内嵌 mock 逻辑 | 等真实模型接入后替换 adapter |
+| 前端 UI | ✅ | 深色主题、情绪卡片、聊天气泡、快速情绪按钮 |
+| 后端 API | ✅ | FastAPI + Railway 托管 |
+| 通信模式 | ✅ | 轮询（/chat/poll），SSE 备选 |
+| 真实 AI | ✅ | MiniMax-M2.5-highspeed |
+| 情绪识别 | ✅ | 预判 + 关键词兜底 + [emotion:xxx] 格式 |
+| 会话记忆 | ✅ | 最近 6 轮对话上下文 |
+| 频控 | ✅ | 60s 窗口内最多 3 次继续 |
+| 降级策略 | ✅ | 置信度 < 0.5 → 纯文本 |
 
-## 3. 协议（已锁死）
-
-见 `docs/PROTOCOL.md`，核心事件流：
-
-```
-emotion_tag → chunk → chunk → ... → done / error
-```
-
-## 4. 情绪字典（Mock 版）
-
-| Tag | 说明 | 视频文件 | 音频文件 |
-|-----|------|---------|---------|
-| neutral | 中立 | neutral.mp4 | neutral.mp3 |
-| happy | 开心 | happy.mp4 | happy.mp3 |
-| sad | 难过 | sad.mp4 | sad.mp3 |
-| angry | 生气 | angry.mp4 | angry.mp3 |
-
-## 5. 降级策略
-
-| 等级 | 条件 | 行为 |
-|------|------|------|
-| 降级 A | confidence ∈ [0.5, 0.8) | 只播音频，不播视频 |
-| 降级 B | confidence < 0.5 或资源缺失 | 纯文本 |
-| 降级 C | 接口超时 > 10s | 显示重试 UI |
-
-## 6. 频控规则
-
-- 滑动窗口：60s 内最多 3 次"继续"
-- 第 4 次触发阻断：按钮置灰 30s
-
-## 7. 验收标准
-
-- [ ] 前端能收到 SSE 流式响应
-- [ ] 文本流式输出（打字机效果）
-- [ ] 视频/音频并发播放
-- [ ] 降级 A/B 正确触发
-- [ ] 继续按钮频控生效
-- [ ] 渲染成功率目测 > 95%
-
-## 8. 目录结构
+## 架构
 
 ```
-tianjixian/
-├── SPEC.md              # 本文件
-├── docs/
-│   └── PROTOCOL.md      # 协议详细定义
-├── backend/
-│   ├── main.py          # FastAPI 入口
-│   ├── mock_engine.py   # Mock LLM 引擎
-│   ├── emotion.py       # 情绪字典 + mock 解析
-│   └── requirements.txt
-└── frontend/
-    ├── index.html       # 主页面
-    ├── style.css        # 样式
-    └── app.js          # 核心逻辑
+用户输入 → 前端 → POST /chat/poll
+                        ↓
+                  MiniMax-M2.5-highspeed
+                        ↓
+                  后端解析情绪 + 文本
+                        ↓
+                  JSON 响应（多个事件）
+                        ↓
+                  前端渲染：情绪卡片 + 气泡 + 诊断面板
 ```
+
+## 接口
+
+- `POST /chat/poll` — 轮询聊天（生产用）
+- `POST /chat` — SSE 流式（备选）
+- `GET /health` — 健康检查
+
+## 部署
+
+- 前端 + 后端：Railway（自动 GitHub 监听）
+- 实时 Demo：https://tianjixian-demo-production.up.railway.app/
+
+## 待接入
+
+- [ ] 真实视频/音频素材（当前 Mock 跳过）
+- [ ] SSE 替代轮询（解决 Railway 代理缓冲问题）
+- [ ] Redis 会话存储（当前用内存字典，容器重启丢失）
