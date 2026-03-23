@@ -129,40 +129,40 @@ async def generate(
     full_text = ""
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("POST", url, headers=headers, json=payload) as resp:
-                if resp.status_code != 200:
-                    err_text = await resp.text()
-                    yield {"type": "error", "event": "error", "data": {
-                        "code": f"HTTP_{resp.status_code}",
-                        "message": f"MiniMax API 错误: {err_text[:200]}",
-                        "fallback_tag": tag,
-                    }}
-                    async for ev in mock_fallback(tag, session_id, user_message):
-                        yield ev
-                    return
+            response = await client.post(url, headers=headers, json=payload)
+            if response.status_code != 200:
+                yield {"type": "error", "event": "error", "data": {
+                    "code": f"HTTP_{response.status_code}",
+                    "message": f"MiniMax API 错误: {response.text[:200]}",
+                    "fallback_tag": tag,
+                }}
+                async for ev in mock_fallback(tag, session_id, user_message):
+                    yield ev
+                return
 
-                async for line in resp.aiter_lines():
-                    line = line.strip()
-                    if not line or not line.startswith("data:"):
-                        continue
-                    data_str = line[5:].strip()
-                    if data_str == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data_str)
-                        choices = chunk.get("choices", [])
-                        if choices:
-                            delta = choices[0].get("delta", {})
-                            content = delta.get("content", "")
-                            if content:
-                                full_text += content
-                                yield {
-                                    "type": "chunk",
-                                    "event": "chunk",
-                                    "data": {"text": content, "is_final": False},
-                                }
-                    except json.JSONDecodeError:
-                        continue
+            text = response.text
+            for line in text.splitlines():
+                line = line.strip()
+                if not line or not line.startswith("data:"):
+                    continue
+                data_str = line[5:].strip()
+                if data_str == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                    choices = chunk.get("choices", [])
+                    if choices:
+                        delta = choices[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            full_text += content
+                            yield {
+                                "type": "chunk",
+                                "event": "chunk",
+                                "data": {"text": content, "is_final": False},
+                            }
+                except json.JSONDecodeError:
+                    continue
 
     except Exception as e:
         yield {"type": "error", "event": "error", "data": {
