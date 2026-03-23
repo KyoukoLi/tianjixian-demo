@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天际线 — AI 互动叙事</title>
+  <style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0d14;--surface:#161622;--card:#1e1e2e;--border:#2a2a3c;--purple:#7c3aed;--purple-l:#a78bfa;--amber:#fbbf24;--green:#34d399;--red:#f87171;--blue:#60a5fa;--text:#e2e8f0;--text-dim:#64748b;--text-mute:#334155}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden;position:fixed;width:100%}
+.header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header-icon{font-size:22px}.header-title{font-size:16px;font-weight:600}
+.header-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--purple);color:white}
+.header-status{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--text-mute)}
+.dot.ok{background:var(--green)}.dot.wait{background:var(--amber);animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.emotion-card{margin:12px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.emotion-icon{font-size:28px}.emotion-info{flex:1}
+.emotion-tag{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.emotion-tag span{font-size:11px;font-weight:400;color:var(--text-dim)}
+.emotion-desc{font-size:12px;color:var(--text-dim);margin-top:2px}
+.emotion-status{font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface);color:var(--text-dim);border:1px solid var(--border)}
+.emotion-status.ok{color:var(--green);border-color:var(--green)}
+.btn-reset{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--border);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.chat::-webkit-scrollbar{width:4px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg{display:flex;flex-direction:column;max-width:85%}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.msg-label{font-size:11px;color:var(--text-mute);margin-bottom:3px;padding:0 4px}
+.bubble{padding:10px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:break-word}
+.msg.user .bubble{background:linear-gradient(135deg,var(--purple),#6d28d9);color:white;border-bottom-right-radius:4px}
+.msg.ai .bubble{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.thinking{display:flex;align-items:center;gap:6px;color:var(--text-dim);font-size:13px;padding:8px 14px}
+.thinking-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text-dim);animation:bounce 1.2s infinite}
+.thinking-dots span:nth-child(2){animation-delay:.2s}.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}
+.input-area{padding:10px 16px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;z-index:10}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.input-text{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--text);resize:none;outline:none;min-height:40px;max-height:80px;font-family:inherit;line-height:1.5;transition:border-color .2s}
+.input-text:focus{border-color:var(--purple-l)}
+.input-text::placeholder{color:var(--text-mute);font-size:13px}
+.btn{height:40px;padding:0 16px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;touch-action:manipulation}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-send{background:var(--purple);color:white}.btn-send:hover:not(:disabled){background:#6d28d9}
+.btn-continue{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-continue:hover:not(:disabled){border-color:var(--purple-l);color:var(--purple-l)}
+.btn-continue.blocked{color:var(--red);border-color:var(--red)}
+.hint{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:11px;color:var(--text-mute)}
+.freq{color:var(--text-dim)}.freq.warn{color:var(--amber)}.freq.danger{color:var(--red)}
+.debug-toggle{padding:8px 16px;font-size:12px;color:var(--text-mute);cursor:pointer;background:var(--surface);border-top:1px solid var(--border);user-select:none;flex-shrink:0}
+.debug-panel{background:var(--surface);border-top:1px solid var(--border);padding:8px 16px;max-height:180px;overflow-y:auto;font-family:"Courier New",monospace;font-size:11px;scrollbar-width:thin}
+.debug-panel{display:none}.debug-panel.open{display:block}
+.d-line{padding:2px 0;border-bottom:1px solid var(--border);color:var(--text-dim)}
+.d-line.tag{color:var(--green)}.d-line.err{color:var(--red)}.d-line.info{color:var(--blue)}
+.qe-btns{display:flex;gap:6px;padding:8px 16px 0;flex-shrink:0}
+.qe-btn{flex:1;height:34px;border-radius:8px;background:var(--card);border:1px solid var(--border);font-size:16px;cursor:pointer;transition:all .2s}
+.qe-btn:hover{border-color:var(--purple-l);transform:scale(1.05)}
+.view-toggle{display:flex;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:12px 16px 0;flex-shrink:0}
+.view-btn{flex:1;height:34px;border:none;background:transparent;color:var(--text-dim);font-size:13px;cursor:pointer}
+.view-btn.active{background:var(--purple);color:white}
+.editor-panel{max-width:600px;width:100%;margin:0 auto;padding:0 16px 16px;overflow-y:auto;flex:1;display:none}
+.editor-panel.active{display:block}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-icon">🌌</div>
+    <div class="header-title">天际线</div>
+    <div class="header-badge">Demo</div>
+    <div class="header-status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText" style="font-size:12px;color:var(--text-dim)">初始化中</span>
+    </div>
+  </header>
+  <div class="main">
+    <div class="view-toggle">
+      <button class="view-btn" id="viewChat" onclick="switchView('chat')">💬 对话</button>
+      <button class="view-btn active" id="viewEditor" onclick="switchView('editor')">⚙️ 配置</button>
+    </div>
+
+    <!-- 对话视图 -->
+    <div class="chat" id="chatView">
+      <div class="emotion-card">
+        <div class="emotion-icon" id="emotionIcon">🎭</div>
+        <div class="emotion-info">
+          <div class="emotion-tag"><span id="emotionTag">等待输入</span><span id="emotionConf"></span></div>
+          <div class="emotion-desc" id="emotionDesc">说出你的感受，我来回应</div>
+        </div>
+        <div class="emotion-status" id="emotionStatus">就绪</div>
+        <button class="btn-reset" onclick="window.__reset&&window.__reset()" title="重置会话">🔄</button>
+      </div>
+    </div>
+
+    <!-- 配置视图 -->
+    <div class="editor-panel active" id="editorView">
+      <div class="editor-tabs" style="display:flex;gap:4px;margin:12px 0 8px">
+        <button class="view-btn active" id="tabPersonaBtn" onclick="switchEditorTab('persona')" style="flex:1">👤 角色</button>
+        <button class="view-btn" id="tabStoryBtn" onclick="switchEditorTab('story')" style="flex:1">📖 故事</button>
+      </div>
+      <div id="personaEditor" class="editor-panel active"></div>
+      <div id="storyEditor" class="editor-panel"></div>
+      <div style="padding:8px 0 12px">
+        <button onclick="saveAndTest()" style="width:100%;height:40px;background:var(--purple);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">💬 保存并测试对话</button>
+      </div>
+    </div>
+
+    <!-- 底部输入（对话视图专用） -->
+    <div id="inputArea" style="display:none">
+      <div class="qe-btns">
+        <button class="qe-btn" onclick="qeSend('*微笑* ')">😊</button>
+        <button class="qe-btn" onclick="qeSend('*点头* ')">🙂</button>
+        <button class="qe-btn" onclick="qeSend('*叹气* ')">😔</button>
+        <button class="qe-btn" onclick="qeSend('*愤怒* ')">😠</button>
+      </div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="messageInput" class="input-text" placeholder="说点什么... 支持 *动作* 语法" rows="1"></textarea>
+          <button class="btn btn-send" id="sendBtn" onclick="window.__send&&window.__send()">发送</button>
+          <button class="btn btn-continue" id="continueBtn" onclick="window.__continue&&window.__continue()" disabled>继续</button>
+        </div>
+        <div class="hint"><span>输入 *动作* 可触发情绪渲染</span><span class="freq" id="freqCounter">继续 0/3</span></div>
+      </div>
+    </div>
+
+    <div class="debug-toggle" id="debugToggle" onclick="toggleDebug()">📡 诊断面板 <span id="debugToggleHint">(点击展开)</span></div>
+    <div class="debug-panel" id="debugPanel"></div>
+  </div>
+  <script src="app.js"></script>
+  <script src="persona_editor.js"></script>
+  <script src="story_editor.js"></script>
+  <script>
+    function switchView(name) {
+      document.getElementById('viewChat').classList.toggle('active', name==='chat');
+      document.getElementById('viewEditor').classList.toggle('active', name==='editor');
+      document.getElementById('chatView').style.display = name==='chat' ? '' : 'none';
+      document.getElementById('editorView').style.display = name==='editor' ? '' : 'none';
+      document.getElementById('inputArea').style.display = name==='chat' ? '' : 'none';
+    }
+    function switchEditorTab(name) {
+      document.getElementById('tabPersonaBtn').classList.toggle('active', name==='persona');
+      document.getElementById('tabStoryBtn').classList.toggle('active', name==='story');
+      document.getElementById('personaEditor').style.display = name==='persona' ? '' : 'none';
+      document.getElementById('storyEditor').style.display = name==='story' ? '' : 'none';
+    }
+    function toggleDebug() {
+      const panel = document.getElementById('debugPanel');
+      panel.classList.toggle('open');
+      document.getElementById('debugToggleHint').textContent = panel.classList.contains('open') ? '(点击收起)' : '(点击展开)';
+    }
+    function qeSend(action) {
+      switchView('chat');
+      document.getElementById('messageInput').value = action;
+      document.getElementById('messageInput').focus();
+    }
+    function saveAndTest() {
+      const persona = window.PersonaEditor ? PersonaEditor.getPersona() : {};
+      const story = window.StoryEditor ? StoryEditor.getStory() : {};
+      localStorage.setItem('tianjixian_persona', JSON.stringify(persona));
+      localStorage.setItem('tianjixian_story', JSON.stringify(story));
+      // Merge prompt for demo
+      let sysPrompt = '【角色人设】\n你是「' + (persona.name || '助手') + '」';
+      if (persona.core_traits) sysPrompt += '\n性格：' + persona.core_traits;
+      if (persona.speaking_style) sysPrompt += '\n语言风格：' + persona.speaking_style;
+      if (persona.dialogue_examples) sysPrompt += '\n【对话示例】\n' + persona.dialogue_examples;
+      if (story.genre) sysPrompt += '\n\n【故事框架】\n题材：' + story.genre;
+      if (story.setting) sysPrompt += '\n世界观：' + story.setting;
+      if (story.forbidden_elements) sysPrompt += '\n禁区：' + story.forbidden_elements;
+      sysPrompt += '\n\n【核心规则】\n1. 回复末尾必须标注情绪：[emotion:happy/neutral/sad/angry]\n2. 支持*动作*语法\n3. 禁止：承认自己是AI、跳出角色';
+      log('角色已保存: ' + (persona.name || '未命名'), 'tag');
+      log('故事框架: ' + (story.genre || '未设置'), 'tag');
+      log('点击"对话"标签开始测试', 'info');
+      switchView('chat');
+    }
+  </script>
+</body>
+</html>

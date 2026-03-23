@@ -1,0 +1,288 @@
+/* =============================================
+   角色编辑器 + 故事编辑器 样式
+   ============================================= */
+
+.pe-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.pe-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--purple-l);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pe-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pe-row {
+  display: flex;
+  gap: 10px;
+}
+
+.pe-row .pe-field {
+  flex: 1;
+}
+
+.pe-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pe-field.pe-full {
+  width: 100%;
+}
+
+.pe-field label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.pe-field input,
+.pe-field select,
+.pe-field textarea {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.pe-field input:focus,
+.pe-field select:focus,
+.pe-field textarea:focus {
+  border-color: var(--purple);
+}
+
+.pe-field input::placeholder,
+.pe-field textarea::placeholder {
+  color: var(--text-mute);
+  font-size: 13px;
+}
+
+.pe-field select {
+  cursor: pointer;
+}
+
+/* ── 权重滑块 ── */
+.pe-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.pe-slider-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.pe-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
+
+.pe-weight-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--purple-l);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.pe-weight-hint {
+  font-size: 12px;
+  color: var(--text-mute);
+  text-align: center;
+}
+
+/* ── 操作按钮 ── */
+.pe-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pe-btn-pe,
+.pe-btn-ghost {
+  flex: 1;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pe-btn-pe {
+  background: var(--purple);
+  color: white;
+}
+
+.pe-btn-pe:hover {
+  background: #6d28d9;
+}
+
+.pe-btn-ghost {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.pe-btn-ghost:hover {
+  border-color: var(--purple-l);
+  color: var(--purple-l);
+}
+
+/* ── Prompt 预览 ── */
+.pe-preview {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.pe-prompt-code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: var(--green);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── 故事编辑器 ── */
+.story-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.story-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── 标签输入 ── */
+.tag-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 42px;
+  align-items: center;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--purple);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.tag-chip-remove {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.tag-chip-remove:hover {
+  opacity: 1;
+}
+
+.tag-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  min-width: 80px;
+}
+
+/* ── 结局选项 ── */
+.ending-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ending-option {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+
+.ending-option.active {
+  border-color: var(--purple);
+  color: var(--purple-l);
+  background: rgba(124, 58, 237, 0.1);
+}
+
+/* ── 合并视图切换 ── */
+.view-toggle {
+  display: flex;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.view-btn {
+  flex: 1;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn.active {
+  background: var(--purple);
+  color: white;
+}
