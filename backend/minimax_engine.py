@@ -11,10 +11,10 @@ from typing import AsyncGenerator, Dict, Any, Optional, List
 
 import httpx
 
-MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
-MINIMAX_GROUP_ID = os.environ.get("MINIMAX_GROUP_ID", "")
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "").strip()
+MINIMAX_GROUP_ID = os.environ.get("MINIMAX_GROUP_ID", "").strip()
 # Cloudflare Worker 代理地址（如: https://tianjixian-demo.lizhenyue66.workers.dev）
-MINIMAX_PROXY_URL = os.environ.get("MINIMAX_PROXY_URL", "").rstrip("/")
+MINIMAX_PROXY_URL = os.environ.get("MINIMAX_PROXY_URL", "").strip().rstrip("/")
 
 EMOTION_MAP = {
     "neutral": "neutral",
