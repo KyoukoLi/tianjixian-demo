@@ -16,7 +16,17 @@ from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from mock_engine import generate, StreamEvent
+from mock_engine import generate as mock_generate, StreamEvent
+from minimax_engine import generate as minimax_generate, DEFAULT_MODEL
+import os
+
+# 优先使用 MiniMax（环境变量），否则回退到 Mock
+USE_MINIMAX = bool(os.environ.get("MINIMAX_API_KEY"))
+
+def get_generator(session_id, message):
+    if USE_MINIMAX:
+        return minimax_generate(session_id, message)
+    return mock_generate(session_id, message)
 
 app = FastAPI(title="天际线 Demo API", version="0.1.0")
 
@@ -63,7 +73,7 @@ def format_sse(event: StreamEvent) -> str:
 
 async def sse_generator(session_id: str, user_message: str):
     try:
-        async for event in generate(session_id, user_message):
+        async for event in get_generator(session_id, user_message):
             yield format_sse(event)
             await asyncio.sleep(0.001)
     except Exception as e:
@@ -166,7 +176,7 @@ async def chat_poll(req: ChatRequest):
     user_message = req.message.strip()
 
     events = []
-    async for event in generate(session_id, user_message):
+    async for event in get_generator(session_id, user_message):
         events.append({
             "type": event.event,
             "data": event.data,
@@ -176,6 +186,8 @@ async def chat_poll(req: ChatRequest):
         "session_id": session_id,
         "events": events,
         "mode": "poll",
+        "engine": "minimax" if USE_MINIMAX else "mock",
+        "model": DEFAULT_MODEL if USE_MINIMAX else None,
     }
 
 
