@@ -156,7 +156,7 @@
   <!-- 顶栏 -->
   <div class="header">
     <span class="header-icon">🌌</span>
-    <span class="header-title">天际线 <span id="appVersion" style="font-size:11px;opacity:0.6">v0.4.6-test</span></span>
+    <span class="header-title">天际线 <span id="appVersion" style="font-size:11px;opacity:0.6">v0.4.7</span></span>
     <span class="header-badge" id="buildTag">🚀 就绪</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
       <div id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#34d399"></div>
@@ -507,33 +507,54 @@ async function runTest() {
   var msg = input.value.trim();
   input.value = '';
   output.style.display = 'block';
-  output.textContent = '⏳ 发送中...\n\n';
+  output.textContent = '⏳ 发送中（第 1 次）...\n\n';
 
   var persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
   var story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+  var lastError = '';
 
-  try {
-    var res = await fetch('/chat/poll', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, persona: persona, story: story }),
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-    var done = (data.events || []).find(function(e) { return e.type === 'done'; });
-    var reply = done ? done.data.full_text : '(无回复)';
-    var tag = done ? done.data.emotion_tag : '?';
-    var ver = data.version || '?';
-    output.innerHTML = '【角色】 ' + (persona&&persona.name ? persona.name : '(未设置)') + '\n' +
-      '【故事】 ' + (story&&story.genre ? story.genre : '(未设置)') + '\n' +
-      '【输入】 ' + msg + '\n\n' +
-      '【AI回复】 ' + reply + '\n' +
-      '【情绪】 ' + tag + '  |  version: ' + ver;
-    document.getElementById('statusText').textContent = '✅ 已回复';
-  } catch(err) {
-    output.textContent = '❌ 请求失败: ' + err.message;
-    document.getElementById('statusText').textContent = '❌ 失败';
+  for (var attempt = 1; attempt <= 3; attempt++) {
+    try {
+      var res = await fetch('/chat/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, persona: persona, story: story }),
+      });
+      if (!res.ok) {
+        if (res.status === 503 || res.status === 500) {
+          lastError = 'HTTP ' + res.status + '（Railway 忙碌）';
+          if (attempt < 3) {
+            output.textContent = '⏳ 服务器忙碌，等待 ' + (attempt * 1500) + 'ms 后重试...\n\n';
+            await new Promise(function(r) { setTimeout(r, attempt * 1500); });
+            continue;
+          }
+        }
+        throw new Error('HTTP ' + res.status);
+      }
+      var data = await res.json();
+      var done = (data.events || []).find(function(e) { return e.type === 'done'; });
+      var reply = done ? done.data.full_text : '(无回复)';
+      var tag = done ? done.data.emotion_tag : '?';
+      var ver = data.version || '?';
+      var isMock = done && done.data.is_mock;
+      output.innerHTML = '【角色】 ' + (persona&&persona.name ? persona.name : '(未设置)') + '\n' +
+        '【故事】 ' + (story&&story.genre ? story.genre : '(未设置)') + '\n' +
+        '【输入】 ' + msg + '\n\n' +
+        '【AI回复】 ' + reply + '\n' +
+        '【情绪】 ' + tag + (isMock ? ' （Mock）' : ' （MiniMax AI）') + '\n' +
+        '【版本】 ' + ver;
+      document.getElementById('statusText').textContent = '✅ 已回复';
+      return;
+    } catch(err) {
+      lastError = err.message;
+      if (attempt < 3) {
+        output.textContent = '❌ 第 ' + attempt + ' 次: ' + err.message + '，1.5 秒后重试...\n\n';
+        await new Promise(function(r) { setTimeout(r, 1500); });
+      }
+    }
   }
+  output.textContent = '❌ 多次重试失败: ' + lastError + '\n\n提示: Railway 免费层并发受限，建议稍等片刻后再试。';
+  document.getElementById('statusText').textContent = '❌ 失败';
 }
 
 // 监听 persona/story 变化，更新预览
