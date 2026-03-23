@@ -2,80 +2,70 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>天际线 Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>天际线</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- 顶部 -->
+  <!-- 顶栏 -->
   <header class="header">
     <div class="header-icon">🌌</div>
     <div class="header-title">天际线</div>
-    <div class="header-badge">Demo v0.1</div>
-    <div style="flex:1"></div>
-    <div class="status-bar">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText" style="font-size:12px;color:var(--text-muted)">连接中...</span>
+    <div class="header-badge">Demo</div>
+    <div class="header-status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">初始化中</span>
     </div>
   </header>
 
   <!-- 主内容 -->
-  <main class="main">
+  <div class="main">
 
-    <!-- 视频区域 -->
-    <section class="video-section">
-      <div class="video-placeholder" id="videoPlaceholder">
-        <div class="video-placeholder-icon">🎭</div>
-        <div class="video-placeholder-text" id="videoPlaceholderText">等待情绪渲染...</div>
-      </div>
-      <video id="videoPlayer" muted playsinline></video>
-      <div class="emotion-badge" id="emotionBadge">neutral</div>
-      <div class="fallback-indicator" id="fallbackIndicator"></div>
-    </section>
-
-    <!-- 聊天区域 -->
-    <section class="chat-section">
-      <div class="chat-messages" id="chatMessages">
-        <!-- 消息动态插入 -->
-      </div>
-
-      <!-- 输入区 -->
-      <div class="input-section">
-        <div class="input-wrapper">
-          <textarea
-            id="messageInput"
-            placeholder="输入消息... 支持 *动作* 语法，如：你好呀*微笑*"
-            rows="1"
-          ></textarea>
-          <div class="action-hint">*动作*</div>
+    <!-- 情绪卡片 -->
+    <div class="emotion-card">
+      <div class="emotion-icon" id="emotionIcon">🎭</div>
+      <div class="emotion-info">
+        <div class="emotion-tag">
+          <span id="emotionTag">等待输入</span>
+          <span id="emotionConf"></span>
         </div>
-        <button class="btn btn-send" id="sendBtn">
-          <span>发送</span>
-        </button>
-        <button class="btn btn-continue" id="continueBtn" disabled>
-          <span>▶ 继续</span>
-        </button>
+        <div class="emotion-desc" id="emotionDesc">说出你的感受，我来回应</div>
       </div>
+      <div class="emotion-status" id="emotionStatus">就绪</div>
+    </div>
 
-      <!-- 频控 -->
-      <div style="padding: 8px 20px; display:flex; justify-content:flex-end;">
-        <span class="freq-counter" id="freqCounter">继续 0/3</span>
+    <!-- 聊天 -->
+    <div class="chat" id="chatMessages">
+      <!-- 消息动态插入 -->
+    </div>
+
+    <!-- 输入区 -->
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="messageInput"
+          class="input-text"
+          placeholder="说点什么... 支持 *动作* 语法，如：你好*微笑*"
+          rows="1"
+        ></textarea>
+        <button class="btn btn-send" id="sendBtn">发送</button>
+        <button class="btn btn-continue" id="continueBtn" disabled>继续</button>
       </div>
-    </section>
+      <div class="hint">
+        <span>输入 *动作* 可触发情绪渲染</span>
+        <span class="freq" id="freqCounter">继续 0/3</span>
+      </div>
+    </div>
 
-    <!-- 诊断面板 -->
-    <section class="debug-panel">
-      <h4>📡 诊断面板 <button id="testBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;cursor:pointer">测试API</button></h4>
-      <div id="debugLog"></div>
-    </section>
+    <!-- 诊断折叠面板 -->
+    <div class="debug-toggle" id="debugToggle" onclick="toggleDebug()">
+      📡 诊断面板 <span id="debugToggleHint">(点击展开)</span>
+    </div>
+    <div class="debug-panel" id="debugPanel"></div>
 
-  </main>
+  </div>
 
-  <script>
-  console.log('[天际线] Inline script running');
-  document.getElementById('debugLog').innerHTML = '<div style="color:#10b981">[天际线] 脚本已加载，API: ' + location.origin + '</div>';
-</script>
-<script src="app.js?v=3"></script>
+  <script src="app.js"></script>
 </body>
 </html>
