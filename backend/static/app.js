@@ -1,7 +1,7 @@
 /**
  * 天际线 Demo — 前端核心逻辑
  * 负责：聊天请求 / 并发调度 / 降级策略 / 频控 / UI 渲染
- * 通信模式：轮询（POST /chat/poll），SSE 备选
+ * 通信模式：轮询（POST /chat/poll）
  */
 
 (function () {
@@ -23,7 +23,6 @@
     CONTINUE_COOLDOWN_MS: 30_000,
     FALLBACK_A_THRESHOLD: 0.5,
     FALLBACK_B_THRESHOLD: 0.5,
-    REQUEST_TIMEOUT_MS: 15000,
   };
 
   // ─────────────────────────────────────────
@@ -41,27 +40,45 @@
     currentVideoAsset: null,
     currentAudioUrl: null,
     renderMode: 'full',
-    useSSE: false,
   };
 
   // ─────────────────────────────────────────
   // DOM refs
   // ─────────────────────────────────────────
-  const $ = (id) => document.getElementById(id);
-  const dom = {
-    messageInput:   $('messageInput'),
-    sendBtn:        $('sendBtn'),
-    continueBtn:    $('continueBtn'),
-    chatMessages:   $('chatMessages'),
-    statusDot:      $('statusDot'),
-    freqCounter:    $('freqCounter'),
-    debugLog:       $('debugLog'),
-    videoPlayer:    $('videoPlayer'),
-    videoPlaceholder: $('videoPlaceholder'),
-    emotionBadge:   $('emotionBadge'),
-    fallbackIndicator: $('fallbackIndicator'),
-    statusText:     $('statusText'),
+  const $ = (id) => {
+    const el = document.getElementById(id);
+    if (!el) console.error('[天际线] 找不到元素:', id);
+    return el;
   };
+
+  const dom = {
+    messageInput:     $('messageInput'),
+    sendBtn:          $('sendBtn'),
+    continueBtn:      $('continueBtn'),
+    chatMessages:     $('chatMessages'),
+    statusDot:        $('statusDot'),
+    freqCounter:      $('freqCounter'),
+    debugLog:         $('debugLog'),
+    videoPlayer:      $('videoPlayer'),
+    videoPlaceholder:  $('videoPlaceholder'),
+    emotionBadge:     $('emotionBadge'),
+    fallbackIndicator:$('fallbackIndicator'),
+    statusText:       $('statusText'),
+  };
+
+  // ─────────────────────────────────────────
+  // 启动检查
+  // ─────────────────────────────────────────
+  const missing = Object.entries(dom).filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length) {
+    console.error('[天际线] 缺少 DOM 元素:', missing.join(', '));
+    document.body.innerHTML = `<div style="padding:20px;color:red;font-size:16px">
+      天际线 Demo 加载失败，缺少元素: ${missing.join(', ')}
+    </div>`;
+    return;
+  }
+
+  console.log('[天际线] 初始化完成，API:', CONFIG.API_BASE);
 
   // ─────────────────────────────────────────
   // 工具
@@ -269,6 +286,30 @@
   }
 
   // ─────────────────────────────────────────
+  // 测试按钮（诊断用）
+  // ─────────────────────────────────────────
+  const testBtn = document.getElementById('testBtn');
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      log('点击测试按钮，发送 "test" 到 ' + CONFIG.API_BASE + '/chat/poll', 'tag');
+      fetch(`${CONFIG.API_BASE}/chat/poll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test' }),
+      }).then(r => {
+        log(`测试请求: HTTP ${r.status}`, r.ok ? 'tag' : 'error');
+        return r.json();
+      }).then(d => {
+        log(`收到 ${d.events.length} 个事件`, 'tag');
+        const done = d.events.find(e => e.type === 'done');
+        if (done) log(`AI 回复: ${done.data.full_text}`, 'tag');
+      }).catch(e => {
+        log(`测试失败: ${e.message}`, 'error');
+      });
+    });
+  }
+
+  // ─────────────────────────────────────────
   // 事件绑定
   // ─────────────────────────────────────────
   dom.sendBtn.addEventListener('click', () => {
@@ -302,6 +343,7 @@
   updateFreqCounter();
   log('天际线 Demo 初始化完成', 'tag');
   log(`API: ${CONFIG.API_BASE}`, 'info');
-  log('通信模式: 轮询 (/chat/poll)', 'tag');
+  log('通信模式: 轮询', 'tag');
+  log('点击"测试API"按钮验证网络连通性', 'info');
 
 })();
