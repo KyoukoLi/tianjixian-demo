@@ -295,11 +295,16 @@
       const url = `${CONFIG.API_BASE}/chat`;
       const body = JSON.stringify({ message, session_id: state.sessionId });
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body,
+        signal: controller.signal,
       }).then(res => {
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setStatus('流式接收中', 'streaming');
         return res.body.getReader();
@@ -325,10 +330,12 @@
         }
         pump();
       }).catch(err => {
-        log(`[SSE错误] ${err.message}`, 'error');
+        clearTimeout(timeout);
+        const msg = err.name === 'AbortError' ? '请求超时，请检查网络' : `连接失败：${err.message}`;
+        log(`[SSE错误] ${msg}`, 'error');
         setStatus('连接失败', 'error');
         if (currentAiMessageEl) {
-          updateStreamingMessage(currentAiMessageEl, '⚠ 连接失败，请检查后端是否启动。');
+          updateStreamingMessage(currentAiMessageEl, `⚠ ${msg}`);
           finalizeMessage(currentAiMessageEl);
         }
         cleanup();

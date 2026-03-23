@@ -139,11 +139,12 @@ async def chat(req: ChatRequest):
 
     return StreamingResponse(
         sse_generator(session_id, user_message),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "X-Accel-Expires": "0",
         }
     )
 
