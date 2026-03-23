@@ -113,7 +113,7 @@ async def generate(
     ]
 
     # 调用 MiniMax API（通过 Cloudflare Worker 代理）
-    url = f"{MINIMAX_PROXY_URL}/v1/text/chatcompletion_v2?GroupId={MINIMAX_GROUP_ID}"
+    url = f"{MINIMAX_PROXY_URL}/proxy/v1/text/chatcompletion_v2?GroupId={MINIMAX_GROUP_ID}"
     headers = {
         "Authorization": f"Bearer {MINIMAX_API_KEY}",
         "Content-Type": "application/json",

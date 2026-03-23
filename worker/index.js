@@ -7,9 +7,15 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // 转发到 MiniMax API（去掉 /proxy 前缀）
-    const path = url.pathname.replace('/proxy', '');
-    const target = 'https://api.minimax.chat' + path;
+    // 完整路径直接转发，去掉 /proxy 前缀
+    let targetPath = url.pathname;
+    if (targetPath.startsWith('/proxy')) {
+      targetPath = targetPath.slice(6); // 去掉 "/proxy"
+    }
+    if (!targetPath) targetPath = '/';
+
+    const target = 'https://api.minimax.chat' + targetPath;
+    const fullUrl = url.search ? target + url.search : target;
 
     const headers = {};
     for (const [k, v] of request.headers) {
@@ -20,7 +26,7 @@ export default {
 
     const body = await request.text();
 
-    const response = await fetch(target, {
+    const response = await fetch(fullUrl, {
       method: request.method,
       headers,
       body: body || undefined,
@@ -28,7 +34,8 @@ export default {
 
     const newHeaders = {};
     for (const [k, v] of response.headers) {
-      if (!['content-encoding', 'transfer-encoding', 'connection'].includes(k.toLowerCase())) {
+      const kl = k.toLowerCase();
+      if (!['content-encoding', 'transfer-encoding', 'connection', 'content-length'].includes(kl)) {
         newHeaders[k] = v;
       }
     }
