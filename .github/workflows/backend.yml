@@ -3,7 +3,7 @@ name: Deploy Backend to Railway
 on:
   push:
     branches: [main]
-    paths: [backend/**, Dockerfile, railway.json, .github/workflows/backend.yml]
+    paths: [backend/**, Dockerfile, .github/workflows/backend.yml]
 
 jobs:
   deploy-backend:
@@ -17,14 +17,8 @@ jobs:
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
 
       - name: Deploy to Railway
-        if: vars.RAILWAY_TOKEN != ''
-        run: railway up --token "$RAILWAY_TOKEN" --service tianjixian-backend
+        run: |
+          export RAILWAY_TOKEN="${{ secrets.RAILWAY_TOKEN }}"
+          railway up --service tianjixian-backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Trigger Railway via GitHub API
-        if: vars.RAILWAY_TOKEN == ''
-        run: |
-          # Railway should auto-deploy via GitHub integration
-          echo "Railway GitHub integration should handle deployment"
-          echo "If not, set RAILWAY_TOKEN secret in GitHub repo settings"
