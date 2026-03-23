@@ -2,15 +2,12 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>天际线 — 角色编辑器</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="persona_editor.css">
-  <link rel="stylesheet" href="persona_editor.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>天际线 — 配置编辑器</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0d0d14; --surface: #161622; --card: #1e1e2e;
+      --bg: #0d0d14; --surface: #161622; --card: #1e1e2e; --card2: #252538;
       --border: #2a2a3c; --purple: #7c3aed; --purple-l: #a78bfa;
       --amber: #fbbf24; --green: #34d399; --red: #f87171;
       --text: #e2e8f0; --text-dim: #64748b; --text-mute: #334155;
@@ -18,106 +15,543 @@
     body {
       font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
       background: var(--bg); color: var(--text);
-      min-height: 100vh; padding: 16px;
+      min-height: 100dvh; padding: 0; margin: 0;
     }
     .header {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 20px;
+      padding: 12px 16px; background: var(--surface);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
     }
-    .header-icon { font-size: 24px; }
-    .header-title { font-size: 18px; font-weight: 600; }
-    .header-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--purple); color: white; }
-    .main { max-width: 700px; margin: 0 auto; }
-    .editor-tabs {
-      display: flex; gap: 4px; margin-bottom: 16px;
+    .header-icon { font-size: 22px; }
+    .header-title { font-size: 17px; font-weight: 600; }
+    .header-badge {
+      font-size: 11px; padding: 2px 8px; border-radius: 20px;
+      background: var(--purple); color: white; font-weight: 500;
+    }
+
+    /* Tab buttons */
+    .tabs {
+      display: flex; gap: 4px; margin: 16px 16px 0;
       background: var(--card); border: 1px solid var(--border);
       border-radius: 10px; padding: 4px;
     }
     .tab-btn {
       flex: 1; height: 36px; border: none; border-radius: 8px;
       background: transparent; color: var(--text-dim); font-size: 14px;
-      cursor: pointer; transition: all 0.2s;
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
     }
     .tab-btn.active { background: var(--purple); color: white; }
-    .tab-panel { display: none; }
+
+    /* Panels */
+    .tab-panel { display: none; padding: 16px; }
     .tab-panel.active { display: block; }
+
+    /* Section blocks */
+    .section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 13px; font-weight: 600; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .section-title.purple { color: var(--purple-l); }
+    .section-title.amber { color: var(--amber); }
+
+    /* Form fields */
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .field label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+    .field input, .field select, .field textarea {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 14px;
+      color: var(--text); font-family: inherit; outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--purple);
+    }
+    .field input::placeholder, .field textarea::placeholder {
+      color: var(--text-mute); font-size: 13px;
+    }
+    .field textarea { resize: vertical; }
+    .field select { cursor: pointer; }
+
+    .row { display: flex; gap: 10px; }
+    .row .field { flex: 1; }
+
+    /* Weight slider */
+    .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .slider-row input { flex: 1; accent-color: var(--purple); cursor: pointer; }
+    .slider-label { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+    .weight-desc { font-size: 14px; font-weight: 600; color: var(--purple-l); text-align: center; margin-bottom: 4px; }
+    .weight-hint { font-size: 12px; color: var(--text-mute); text-align: center; }
+
+    /* Buttons */
+    .actions { display: flex; gap: 8px; margin-bottom: 12px; }
+    .btn { flex: 1; height: 40px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .btn-primary { background: var(--purple); color: white; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-ghost { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--purple-l); color: var(--purple-l); }
+
+    /* Tag options (genre/endings) */
+    .tag-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .tag-opt {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      font-size: 13px; cursor: pointer; background: var(--card2); color: var(--text-dim); transition: all 0.2s;
+    }
+    .tag-opt.active { border-color: var(--purple); color: var(--purple-l); background: rgba(124,58,237,0.1); }
+
+    /* Preview */
+    .preview-box {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; font-family: "Courier New", monospace; font-size: 12px;
+      color: var(--green); white-space: pre-wrap; word-break: break-all;
+      max-height: 300px; overflow-y: auto;
+    }
+
+    /* Debug bar */
+    .debug-bar {
+      margin: 0 16px 16px; padding: 8px 12px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 12px; text-align: center;
+    }
+
+    /* Test section */
+    .test-section { margin-top: 4px; }
+    .test-section-title {
+      font-size: 13px; font-weight: 600; color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .test-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .test-input {
+      flex: 1; background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; font-size: 14px;
+      color: var(--text); font-family: inherit; outline: none;
+    }
+    .test-input:focus { border-color: var(--purple); }
+    .test-btn {
+      height: 40px; padding: 0 20px; background: var(--purple); color: white;
+      border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
+    }
+    .test-btn:hover { background: #6d28d9; }
+    .test-output {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; font-size: 13px; min-height: 60px;
+      white-space: pre-wrap; word-break: break-all; display: none;
+      font-family: "Courier New", monospace;
+    }
+
+    /* Prompt preview in editor */
+    .prompt-preview {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; font-family: "Courier New", monospace; font-size: 12px;
+      color: var(--green); white-space: pre-wrap; word-break: break-all;
+      max-height: 200px; overflow-y: auto; margin-top: 8px;
+    }
   </style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-icon">🌌</div>
-    <div class="header-title">天际线 <span id="appVersion" style="font-size:11px;opacity:0.6">v0.3.4</span></div>
-    <div class="header-badge" id="buildTag">🚀 就绪</div>
-  </header>
 
-  <div class="main">
-    <div class="editor-tabs">
-      <button class="tab-btn active" onclick="switchTab('persona')">👤 角色编辑器</button>
-      <button class="tab-btn" onclick="switchTab('story')">📖 故事大纲</button>
-    </div>
-
-    <div class="tab-panel active" id="tab-persona">
-      <div id="personaEditor"></div>
-      <div id="debugInfo" style="margin-top:8px;font-size:11px;color:#64748b;text-align:center"></div>
-    </div>
-
-    <div class="tab-panel" id="tab-story">
-      <div id="storyEditor"></div>
-    </div>
-
-    <div class="story-section" style="margin-top:16px">
-      <div class="story-section-title">发送测试</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="testInput" placeholder="输入对话内容，点击发送测试..." style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:14px;color:var(--text);outline:none" onkeydown="if(event.key==='Enter')document.getElementById('testBtn').click()">
-        <button id="testBtn" onclick="runTest()" style="height:40px;padding:0 20px;background:var(--purple);color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">发送</button>
-      </div>
-      <div id="testOutput" style="margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:60px;font-size:14px;white-space:pre-wrap;word-break:break-all;display:none"></div>
+  <!-- 顶栏 -->
+  <div class="header">
+    <span class="header-icon">🌌</span>
+    <span class="header-title">天际线 <span id="appVersion" style="font-size:11px;opacity:0.6">v0.3.5</span></span>
+    <span class="header-badge" id="buildTag">🚀 就绪</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      <div id="statusDot" style="width:8px;height:8px;border-radius:50%;background:#34d399"></div>
+      <span id="statusText" style="font-size:12px;color:#64748b">就绪</span>
     </div>
   </div>
 
-  <script src="app.js"></script>
-  <script src="persona_editor.js"></script>
-  <script src="story_editor.js"></script>
-  <script>
-    function switchTab(name) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelector(`.tab-btn[onclick="switchTab('${name}')"]`).classList.add('active');
-      document.getElementById('tab-' + name).classList.add('active');
+  <!-- Tab 切换 -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-persona" onclick="switchTab('persona')">👤 角色编辑器</button>
+    <button class="tab-btn" id="tab-btn-story" onclick="switchTab('story')">📖 故事大纲</button>
+    <button class="tab-btn" id="tab-btn-chat" onclick="switchTab('chat')">💬 对话</button>
+  </div>
+
+  <!-- 角色编辑器 -->
+  <div class="tab-panel active" id="panel-persona">
+    <div id="personaEditor"></div>
+    <div class="debug-bar" id="debugInfo">⏳ 加载中...</div>
+  </div>
+
+  <!-- 故事大纲 -->
+  <div class="tab-panel" id="panel-story">
+    <div id="storyEditor"></div>
+  </div>
+
+  <!-- 对话测试 -->
+  <div class="tab-panel" id="panel-chat">
+    <div class="test-section">
+      <div class="test-section-title">💬 发送测试</div>
+      <div class="test-row">
+        <input class="test-input" id="testInput" placeholder="输入对话内容，点击发送..." onkeydown="if(event.key==='Enter')document.getElementById('testBtn').click()">
+        <button class="test-btn" id="testBtn" onclick="runTest()">发送</button>
+      </div>
+      <div class="test-output" id="testOutput"></div>
+    </div>
+
+    <div class="section" style="margin-top:12px">
+      <div class="section-title purple">💡 快速情绪</div>
+      <div class="tag-options">
+        <div class="tag-opt" onclick="qeSend('开心')">😊 开心</div>
+        <div class="tag-opt" onclick="qeSend('难过')">😢 难过</div>
+        <div class="tag-opt" onclick="qeSend('生气')">😠 生气</div>
+        <div class="tag-opt" onclick="qeSend('好奇')">🤔 好奇</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title purple">📋 当前配置预览</div>
+      <div id="configPreview" class="preview-box" style="color:#a78bfa">// 请先在角色编辑器填写配置</div>
+    </div>
+  </div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// 工具函数
+// ─────────────────────────────────────────────────────────────
+function v(val) { return String(val||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function sel(cur, val) { return cur === val ? 'selected' : ''; }
+
+// ─────────────────────────────────────────────────────────────
+// 角色编辑器
+// ─────────────────────────────────────────────────────────────
+(function() {
+  var DEFAULT_PERSONA = {
+    name: "", age: "", gender: "", appearance: "",
+    backstory: "", core_traits: "", speaking_style: "",
+    likes: "", dislikes: "", goals: "",
+    forbidden_topics: "", dialogue_examples: "", weight: 70,
+  };
+  var currentPersona = Object.assign({}, DEFAULT_PERSONA);
+
+  function buildPrompt(p) {
+    if (!p.name) return '// 请先填写角色名称';
+    var w = p.weight || 50;
+    var focus = w > 60 ? '注重情感互动和细腻情绪描写，深入角色内心世界。' :
+                w < 40 ? '注重事件推进和冲突触发，推进故事主线。' :
+                '平衡情感互动与剧情推进，沉浸式叙事。';
+    var txt = '【角色人设】\n你是「' + p.name + '」';
+    if (p.age) txt += '，' + p.age;
+    if (p.gender) txt += '，' + p.gender;
+    if (p.appearance) txt += '\n外貌：' + p.appearance;
+    if (p.backstory) txt += '\n背景：' + p.backstory;
+    if (p.core_traits) txt += '\n性格：' + p.core_traits;
+    if (p.speaking_style) txt += '\n语言风格：' + p.speaking_style;
+    if (p.likes) txt += '\n喜好：' + p.likes;
+    if (p.dislikes) txt += '\n厌恶：' + p.dislikes;
+    if (p.goals) txt += '\n核心目标：' + p.goals;
+    if (p.forbidden_topics) txt += '\n禁忌话题：' + p.forbidden_topics + '（禁止主动提及）';
+    txt += '\n\n【叙事风格】\n' + focus;
+    txt += '\n\n【核心规则】\n1. 回复末尾标注情绪：[emotion:happy/neutral/sad/angry]\n2. 支持*动作*语法，如：*微微一笑* 你好\n3. 回复简洁自然，1-3句话\n4. 禁止：承认是AI、跳出角色、提及禁忌话题';
+    if (p.dialogue_examples) txt += '\n\n【对话示例】\n' + p.dialogue_examples;
+    return txt;
+  }
+
+  function syncFromInputs() {
+    ['name','age','gender','appearance','backstory','core_traits',
+     'speaking_style','likes','dislikes','goals','forbidden_topics','dialogue_examples'].forEach(function(f) {
+      var el = document.getElementById('pe-' + f);
+      if (el) currentPersona[f] = el.value;
+    });
+    var w = document.getElementById('pe-weight');
+    if (w) { currentPersona.weight = parseInt(w.value) || 70; }
+  }
+
+  function render() {
+    var container = document.getElementById('personaEditor');
+    if (!container) return;
+    var p = currentPersona;
+    container.innerHTML = [
+      '<div class="section">',
+        '<div class="section-title purple">基础信息</div>',
+        '<div class="row">',
+          '<div class="field"><label>角色名称 *</label><input type="text" id="pe-name" placeholder="如：顾深" value="'+v(p.name)+'"></div>',
+          '<div class="field"><label>年龄</label><input type="text" id="pe-age" placeholder="如：28岁" value="'+v(p.age)+'"></div>',
+          '<div class="field"><label>性别</label>',
+            '<select id="pe-gender"><option value="">未设置</option><option value="男" '+sel(p.gender,'男')+'>男</option><option value="女" '+sel(p.gender,'女')+'>女</option><option value="其他" '+sel(p.gender,'其他')+'>其他</option></select>',
+          '</div>',
+        '</div>',
+        '<div class="field"><label>外貌特征</label><input type="text" id="pe-appearance" placeholder="如：外表冷峻，眉眼锐利" value="'+v(p.appearance)+'"></div>',
+      '</div>',
+
+      '<div class="section">',
+        '<div class="section-title purple">人设核心</div>',
+        '<div class="field"><label>身世背景</label><textarea id="pe-backstory" rows="2" placeholder="角色的来历、成长经历">'+v(p.backstory)+'</textarea></div>',
+        '<div class="field"><label>性格特质</label><input type="text" id="pe-core-traits" placeholder="如：外冷内热、毒舌、嘴硬心软" value="'+v(p.core_traits)+'"></div>',
+        '<div class="field"><label>语言风格</label><input type="text" id="pe-speaking-style" placeholder="如：说话简洁、偶尔毒舌" value="'+v(p.speaking_style)+'"></div>',
+        '<div class="row">',
+          '<div class="field"><label>喜好</label><input type="text" id="pe-likes" placeholder="如：黑咖啡、夜深人静" value="'+v(p.likes)+'"></div>',
+          '<div class="field"><label>厌恶</label><input type="text" id="pe-dislikes" placeholder="如：虚伪、背叛" value="'+v(p.dislikes)+'"></div>',
+        '</div>',
+        '<div class="field"><label>核心目标</label><input type="text" id="pe-goals" placeholder="角色最在意的事" value="'+v(p.goals)+'"></div>',
+        '<div class="field"><label>禁忌话题</label><input type="text" id="pe-forbidden-topics" placeholder="角色不愿主动提及的事" value="'+v(p.forbidden_topics)+'"></div>',
+      '</div>',
+
+      '<div class="section">',
+        '<div class="section-title purple">对话调教</div>',
+        '<div class="field"><label>对话示例（few-shot）</label><textarea id="pe-dialogue-examples" rows="3" placeholder="每行一条，如：被夸奖时 -> *轻咳* ...还行吧。">'+v(p.dialogue_examples)+'</textarea></div>',
+      '</div>',
+
+      '<div class="section">',
+        '<div class="section-title purple">叙事权重</div>',
+        '<div class="slider-row"><span class="slider-label">故事向</span><input type="range" id="pe-weight" min="0" max="100" value="'+p.weight+'" oninput="onWeightChange(this.value)"><span class="slider-label">人物向</span></div>',
+        '<div class="weight-desc" id="pe-weight-desc">'+p.weight+'% 人物 / '+(100-p.weight)+'% 故事</div>',
+        '<div class="weight-hint">人物向：注重情感互动。故事向：注重事件推进。</div>',
+      '</div>',
+
+      '<div class="actions">',
+        '<button class="btn btn-primary" id="peSaveBtn">💾 保存角色</button>',
+        '<button class="btn btn-ghost" id="peResetBtn">🔄 重置</button>',
+      '</div>',
+
+      '<div class="section">',
+        '<div class="section-title purple">Prompt 预览</div>',
+        '<div class="prompt-preview" id="pePromptPreview">'+v(buildPrompt(p))+'</div>',
+      '</div>',
+    ].join('');
+
+    // 事件绑定
+    ['name','age','gender','appearance','backstory','core_traits',
+     'speaking_style','likes','dislikes','goals','forbidden_topics','dialogue_examples'].forEach(function(f) {
+      var el = document.getElementById('pe-' + f);
+      if (el) el.addEventListener('input', onInputChange);
+    });
+
+    document.getElementById('peSaveBtn').onclick = function() {
+      syncFromInputs();
+      localStorage.setItem('tianjixian_persona', JSON.stringify(currentPersona));
+      var btn = document.getElementById('peSaveBtn');
+      btn.textContent = '✅ 已保存';
+      setTimeout(function() { btn.textContent = '💾 保存角色'; }, 1500);
+      updateConfigPreview();
+    };
+    document.getElementById('peResetBtn').onclick = function() {
+      if (!confirm('确定重置？当前内容会丢失。')) return;
+      currentPersona = Object.assign({}, DEFAULT_PERSONA);
+      render();
+    };
+
+    updateDebug();
+    updateConfigPreview();
+  }
+
+  function onWeightChange(val) {
+    currentPersona.weight = parseInt(val);
+    var desc = document.getElementById('pe-weight-desc');
+    if (desc) desc.textContent = val + '% 人物 / ' + (100-val) + '% 故事';
+    onInputChange();
+  }
+
+  function onInputChange() {
+    syncFromInputs();
+    var preview = document.getElementById('pePromptPreview');
+    if (preview) preview.textContent = buildPrompt(currentPersona);
+    updateConfigPreview();
+    window.dispatchEvent(new CustomEvent('persona-changed', { detail: currentPersona }));
+  }
+
+  function updateConfigPreview() {
+    var el = document.getElementById('configPreview');
+    if (!el) return;
+    var p = currentPersona;
+    var s = window.StoryEditor ? window.StoryEditor.getStory() : {};
+    if (!p.name && !s.genre) {
+      el.textContent = '// 请先在角色编辑器填写配置';
+      return;
     }
-    async function runTest() {
-      const input = document.getElementById('testInput').value.trim();
-      const output = document.getElementById('testOutput');
-      if (!input) return;
-      output.style.display = 'block';
-      output.textContent = '⏳ 正在发送...\n\n';
+    el.textContent = '【角色】' + (p.name || '(未设置)') + '\n' +
+      '【性格】' + (p.core_traits || '-') + '\n' +
+      '【故事】' + (s.genre || '(未设置)');
+  }
 
-      const persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
-      const story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+  function updateDebug() {
+    var debug = document.getElementById('debugInfo');
+    if (!debug) return;
+    var inputs = document.querySelectorAll('#personaEditor input, #personaEditor textarea, #personaEditor select');
+    var saveBtn = document.getElementById('peSaveBtn');
+    debug.textContent = '✅ 角色编辑器已加载 | 表单字段: ' + inputs.length + ' | 保存按钮: ' + (saveBtn ? '✅' : '❌');
+    debug.style.color = '#34d399';
+  }
 
-      try {
-        const res = await fetch('/chat/poll', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: input, persona, story }),
-        });
-        const data = await res.json();
-        const events = data.events || [];
-        const done = events.find(e => e.type === 'done');
-        const emotionTag = done ? done.data.emotion_tag : '?';
-        const reply = done ? done.data.full_text : '(无回复)';
+  window.PersonaEditor = {
+    save: function() { syncFromInputs(); localStorage.setItem('tianjixian_persona', JSON.stringify(currentPersona)); },
+    reset: function() { currentPersona = Object.assign({}, DEFAULT_PERSONA); render(); },
+    getPersona: function() { syncFromInputs(); return Object.assign({}, currentPersona); },
+  };
 
-        output.innerHTML = `<span style="color:#a78bfa">【角色】</span> ${persona && persona.name ? persona.name : '(未设置)'}
-<span style="color:#a78bfa">【故事】</span> ${story && story.genre ? story.genre : '(未设置)'}
-<span style="color:#a78bfa">【用户输入】</span> ${input}
+  // Init
+  var saved = localStorage.getItem('tianjixian_persona');
+  if (saved) { try { currentPersona = Object.assign({}, DEFAULT_PERSONA, JSON.parse(saved)); } catch(e) {} }
+  render();
+})();
 
-<span style="color:#34d399">【AI 回复】</span> ${reply}
-<span style="color:#fbbf24">【情绪标签】</span> ${emotionTag}
-<span style="color:#64748b;font-size:12px">version: ${data.version || '?'} | events: ${events.length}</span>`;
-      } catch (err) {
-        output.textContent = '❌ 请求失败: ' + err.message;
-      }
-    }
-  </script>
+// ─────────────────────────────────────────────────────────────
+// 故事编辑器
+// ─────────────────────────────────────────────────────────────
+(function() {
+  var DEFAULT_STORY = { genre: '', setting: '', timeline: '', endings: [], core_conflict: '', key_events: '', forbidden_elements: '' };
+  var currentStory = Object.assign({}, DEFAULT_STORY);
+  var ENDINGS = [{id:'he',label:'HE'},{id:'ne',label:'NE'},{id:'be',label:'BE'},{id:'open',label:'开放'}];
+  var GENRES = ['现代都市','校园','职场','古代宫廷','奇幻','科幻','悬疑','其他'];
+
+  function render() {
+    var container = document.getElementById('storyEditor');
+    if (!container) return;
+    var s = currentStory;
+    var endingsHtml = ENDINGS.map(function(e) {
+      return '<div class="tag-opt'+(s.endings.includes(e.id)?' active':'')+'" onclick="StoryEditor.toggleEnding(\''+e.id+'\')">'+e.label+'</div>';
+    }).join('');
+    var genresHtml = GENRES.map(function(g) {
+      return '<div class="tag-opt'+(s.genre===g?' active':'')+'" onclick="StoryEditor.selectGenre(\''+g+'\')">'+g+'</div>';
+    }).join('');
+
+    container.innerHTML = [
+      '<div class="section">',
+        '<div class="section-title amber">题材类型</div>',
+        '<div class="tag-options">'+genresHtml+'</div>',
+        '<div class="field"><label>自定义题材</label><input type="text" id="st-genre-custom" placeholder="如：民国谍战" value="'+v(s.genre)+'" oninput="StoryEditor.setGenre(this.value)"></div>',
+      '</div>',
+      '<div class="section">',
+        '<div class="section-title amber">世界观设定</div>',
+        '<div class="field"><label>故事背景</label><textarea id="st-setting" rows="2" placeholder="如：上海，2024年，公司高管与新人">'+v(s.setting)+'</textarea></div>',
+        '<div class="field"><label>时间跨度</label><input type="text" id="st-timeline" placeholder="如：从初遇到相知，跨度3个月" value="'+v(s.timeline)+'"></div>',
+      '</div>',
+      '<div class="section">',
+        '<div class="section-title amber">结局方向（可多选）</div>',
+        '<div class="tag-options">'+endingsHtml+'</div>',
+      '</div>',
+      '<div class="section">',
+        '<div class="section-title amber">剧情设定</div>',
+        '<div class="field"><label>核心冲突</label><textarea id="st-conflict" rows="2" placeholder="如：家族利益 vs 真心">'+v(s.core_conflict)+'</textarea></div>',
+        '<div class="field"><label>关键事件（换行分隔）</label><textarea id="st-events" rows="2" placeholder="如：初遇 - 咖啡厅偶遇&#10;误解 - 身份被误解">'+v(s.key_events)+'</textarea></div>',
+      '</div>',
+      '<div class="section">',
+        '<div class="section-title amber">禁区设定</div>',
+        '<div class="field"><label>禁止出现的元素（换行分隔）</label><textarea id="st-forbidden" rows="2" placeholder="如：超自然元素&#10;现代科技">'+v(s.forbidden_elements)+'</textarea></div>',
+      '</div>',
+      '<div class="actions">',
+        '<button class="btn btn-primary" id="stSaveBtn">💾 保存故事</button>',
+        '<button class="btn btn-ghost" id="stResetBtn">🔄 重置</button>',
+      '</div>',
+    ].join('');
+
+    document.getElementById('stSaveBtn').onclick = function() {
+      syncFromInputs();
+      localStorage.setItem('tianjixian_story', JSON.stringify(currentStory));
+      var btn = document.getElementById('stSaveBtn');
+      btn.textContent = '✅ 已保存';
+      setTimeout(function() { btn.textContent = '💾 保存故事'; }, 1500);
+    };
+    document.getElementById('stResetBtn').onclick = function() {
+      if (!confirm('确定重置？')) return;
+      currentStory = Object.assign({}, DEFAULT_STORY);
+      render();
+    };
+    window.dispatchEvent(new CustomEvent('story-changed', { detail: currentStory }));
+  }
+
+  function syncFromInputs() {
+    var keys = ['setting','timeline','conflict','events','forbidden'];
+    var ids = ['st-setting','st-timeline','st-conflict','st-events','st-forbidden'];
+    keys.forEach(function(k, i) {
+      var el = document.getElementById(ids[i]);
+      if (el) currentStory[k] = el.value;
+    });
+    var custom = document.getElementById('st-genre-custom');
+    if (custom && custom.value) currentStory.genre = custom.value;
+  }
+
+  window.StoryEditor = {
+    selectGenre: function(g) { currentStory.genre = g; document.getElementById('st-genre-custom').value = ''; render(); },
+    setGenre: function(v) { currentStory.genre = v; render(); },
+    toggleEnding: function(id) {
+      var idx = currentStory.endings.indexOf(id);
+      if (idx >= 0) currentStory.endings.splice(idx, 1); else currentStory.endings.push(id);
+      render();
+    },
+    save: function() { syncFromInputs(); localStorage.setItem('tianjixian_story', JSON.stringify(currentStory)); },
+    reset: function() { currentStory = Object.assign({}, DEFAULT_STORY); render(); },
+    getStory: function() { syncFromInputs(); return Object.assign({}, currentStory); },
+  };
+
+  var saved = localStorage.getItem('tianjixian_story');
+  if (saved) { try { currentStory = Object.assign({}, DEFAULT_STORY, JSON.parse(saved)); } catch(e) {} }
+  render();
+})();
+
+// ─────────────────────────────────────────────────────────────
+// Tab 切换 + 对话测试
+// ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var btn = document.getElementById('tab-btn-' + name);
+  if (btn) btn.classList.add('active');
+  var panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+}
+
+function qeSend(action) {
+  var inp = document.getElementById('testInput');
+  if (inp) { inp.value = action; inp.focus(); }
+}
+
+async function runTest() {
+  var input = document.getElementById('testInput');
+  var output = document.getElementById('testOutput');
+  if (!input || !input.value.trim()) return;
+  var msg = input.value.trim();
+  input.value = '';
+  output.style.display = 'block';
+  output.textContent = '⏳ 发送中...\n\n';
+
+  var persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
+  var story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+
+  try {
+    var res = await fetch('/chat/poll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, persona: persona, story: story }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var done = (data.events || []).find(function(e) { return e.type === 'done'; });
+    var reply = done ? done.data.full_text : '(无回复)';
+    var tag = done ? done.data.emotion_tag : '?';
+    var ver = data.version || '?';
+    output.innerHTML = '【角色】 ' + (persona&&persona.name ? persona.name : '(未设置)') + '\n' +
+      '【故事】 ' + (story&&story.genre ? story.genre : '(未设置)') + '\n' +
+      '【输入】 ' + msg + '\n\n' +
+      '【AI回复】 ' + reply + '\n' +
+      '【情绪】 ' + tag + '  |  version: ' + ver;
+    document.getElementById('statusText').textContent = '✅ 已回复';
+  } catch(err) {
+    output.textContent = '❌ 请求失败: ' + err.message;
+    document.getElementById('statusText').textContent = '❌ 失败';
+  }
+}
+
+// 监听 persona/story 变化，更新预览
+window.addEventListener('persona-changed', updateConfigPreview, false);
+window.addEventListener('story-changed', updateConfigPreview, false);
+function updateConfigPreview() {
+  var el = document.getElementById('configPreview');
+  if (!el) return;
+  var p = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : {};
+  var s = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : {};
+  if (!p.name && !s.genre) {
+    el.textContent = '// 请先在角色编辑器填写配置';
+    return;
+  }
+  el.textContent = '【角色】' + (p.name || '(未设置)') + '\n' +
+    '【性格】' + (p.core_traits || '-') + '\n' +
+    '【故事】' + (s.genre || '(未设置)');
+}
+</script>
 </body>
 </html>
