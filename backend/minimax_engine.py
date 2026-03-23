@@ -112,9 +112,8 @@ async def generate(
         {"role": "user", "content": user_message},
     ]
 
-    # 调用 MiniMax API（通过 Cloudflare Worker 代理）
-    # 旧版 Worker 直接转发完整路径（含 /proxy），所以这里不带 /proxy
-    url = f"{MINIMAX_PROXY_URL}/v1/text/chatcompletion_v2?GroupId={MINIMAX_GROUP_ID}"
+    # 调用 MiniMax API（Railway 可以直连）
+    url = f"https://api.minimax.chat/v1/text/chatcompletion_v2?GroupId={MINIMAX_GROUP_ID}"
     headers = {
         "Authorization": f"Bearer {MINIMAX_API_KEY}",
         "Content-Type": "application/json",
