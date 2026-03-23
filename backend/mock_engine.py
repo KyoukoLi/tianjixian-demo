@@ -107,6 +107,13 @@ def simulate_chunking(text: str) -> List[str]:
     return chunks
 
 
+from dataclasses import dataclass
+
+@dataclass
+class StreamEvent:
+    event: str
+    data: Any
+
 async def generate(
     session_id: str,
     user_message: str,
@@ -117,13 +124,6 @@ async def generate(
     Mock 生成器
     支持 persona + story 配置
     """
-    from dataclasses import dataclass
-    from emotion import EMOTION_DICT
-
-    class StreamEvent:
-        def __init__(self, event, data):
-            self.event = event
-            self.data = data
 
     # 情绪解析
     tag = "neutral"
