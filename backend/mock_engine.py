@@ -98,13 +98,20 @@ def build_system_prompt(persona: Optional[Dict] = None, story: Optional[Dict] = 
 
 
 def simulate_chunking(text: str) -> List[str]:
+    if not text:
+        return []
     chunks = []
     i = 0
     while i < len(text):
-        size = random.randint(max(1, 4), min(7, len(text) - i))
+        remaining = len(text) - i
+        if remaining <= 0:
+            break
+        lo = min(4, remaining)
+        hi = min(7, remaining)
+        size = random.randint(lo, max(lo, hi))
         chunks.append(text[i:i+size])
         i += size
-    return chunks
+    return chunks or [text]
 
 
 from dataclasses import dataclass
