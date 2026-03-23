@@ -84,16 +84,38 @@
       document.querySelector(`.tab-btn[onclick="switchTab('${name}')"]`).classList.add('active');
       document.getElementById('tab-' + name).classList.add('active');
     }
-    function runTest() {
+    async function runTest() {
       const input = document.getElementById('testInput').value.trim();
       const output = document.getElementById('testOutput');
       if (!input) return;
       output.style.display = 'block';
-      output.textContent = '正在组装 Prompt...\n\n';
-      const persona = window.PersonaEditor ? window.PersonaEditor.getPersona() : {};
-      const story = window.StoryEditor ? window.StoryEditor.getStory() : {};
-      const msg = `【角色】\n${JSON.stringify(persona, null, 2)}\n\n【故事】\n${JSON.stringify(story, null, 2)}\n\n【用户输入】\n${input}`;
-      output.textContent = msg;
+      output.textContent = '⏳ 正在发送...\n\n';
+
+      const persona = (window.PersonaEditor && window.PersonaEditor.getPersona) ? window.PersonaEditor.getPersona() : null;
+      const story = (window.StoryEditor && window.StoryEditor.getStory) ? window.StoryEditor.getStory() : null;
+
+      try {
+        const res = await fetch('/chat/poll', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: input, persona, story }),
+        });
+        const data = await res.json();
+        const events = data.events || [];
+        const done = events.find(e => e.type === 'done');
+        const emotionTag = done ? done.data.emotion_tag : '?';
+        const reply = done ? done.data.full_text : '(无回复)';
+
+        output.innerHTML = `<span style="color:#a78bfa">【角色】</span> ${persona && persona.name ? persona.name : '(未设置)'}
+<span style="color:#a78bfa">【故事】</span> ${story && story.genre ? story.genre : '(未设置)'}
+<span style="color:#a78bfa">【用户输入】</span> ${input}
+
+<span style="color:#34d399">【AI 回复】</span> ${reply}
+<span style="color:#fbbf24">【情绪标签】</span> ${emotionTag}
+<span style="color:#64748b;font-size:12px">version: ${data.version || '?'} | events: ${events.length}</span>`;
+      } catch (err) {
+        output.textContent = '❌ 请求失败: ' + err.message;
+      }
     }
   </script>
 </body>
