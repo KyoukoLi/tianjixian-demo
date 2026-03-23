@@ -20,10 +20,20 @@ from mock_engine import generate, StreamEvent
 
 app = FastAPI(title="天际线 Demo API", version="0.1.0")
 
-# 挂载静态文件目录
+# 挂载静态文件目录（禁用缓存）
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.middleware("http")
+async def no_cache_middleware(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 # CORS
 app.add_middleware(
@@ -78,11 +88,14 @@ async def index():
     if os.path.exists(index_path):
         with open(index_path, encoding="utf-8") as f:
             content = f.read()
+        # 注入：API 地址使用当前请求的 origin（同源，无跨域）
         content = content.replace(
             "const getApiBase = () => {",
             "const getApiBase = () => { return window.location.origin;"
         )
-        return HTMLResponse(content=content)
+        resp = HTMLResponse(content=content)
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
     return {"error": "index.html not found"}
 
 
