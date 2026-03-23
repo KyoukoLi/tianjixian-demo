@@ -3,7 +3,7 @@ name: Deploy Backend to Railway
 on:
   push:
     branches: [main]
-    paths: [backend/**]
+    paths: [backend/**, Dockerfile, railway.json]
 
 jobs:
   deploy-backend:
@@ -12,17 +12,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Railway CLI
-        run: |
-          curl -fsSL https://railway.app/install.sh | sh
-          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+        run: curl -fsSL https://railway.app/install.sh | sh
 
-      - name: Login to Railway
-        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Link project
-        run: railway link --token ${{ secrets.RAILWAY_TOKEN }} ${{ secrets.RAILWAY_PROJECT_ID }}
-
-      - name: Deploy
-        run: railway up --token ${{ secrets.RAILWAY_TOKEN }} --dockerfile
+      - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          export PATH="$HOME/.railway/bin:$PATH"
+          railway up --token "$RAILWAY_TOKEN"
