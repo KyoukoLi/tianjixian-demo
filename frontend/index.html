@@ -556,9 +556,16 @@ body {
       <!-- 消息动态插入 -->
     </div>
 
+    <!-- 快速情绪 -->
+    <div class="quick-emotions">
+      <button class="qe-btn" onclick="qeSend('*微笑* ')">😊</button>
+      <button class="qe-btn" onclick="qeSend('*点头* ')">🙂</button>
+      <button class="qe-btn" onclick="qeSend('*叹气* ')">😔</button>
+      <button class="qe-btn" onclick="qeSend('*愤怒* ')">😠</button>
+    </div>
+
     <!-- 输入区 -->
     <div class="input-area">
-      <div class="input-row">
         <textarea
           id="messageInput"
           class="input-text"
