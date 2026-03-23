@@ -219,11 +219,17 @@
   }
 
   // ── 事件绑定 ──
-  dom.sendBtn.addEventListener('click', () => {
+  // 同时暴露到 window 作为 fallback（HTML onclick 属性）
+  window.__send = () => {
     const t = dom.messageInput.value.trim();
     dom.messageInput.value = '';
     if (t) sendMessage(t);
-  });
+  };
+  window.__continue = () => {
+    if (checkContinue()) sendMessage('【继续】');
+  };
+  // addEventListener 主绑定
+  dom.sendBtn.addEventListener('click', window.__send);
 
   dom.messageInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {

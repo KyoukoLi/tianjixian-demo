@@ -28,6 +28,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  bottom: 0;
 }
 
 /* ── 顶栏 ── */
@@ -162,6 +166,9 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  touch-action: manipulation;
 }
 .input-row { display: flex; gap: 8px; align-items: flex-end; }
 .input-text {
@@ -188,6 +195,9 @@ body {
   font-size: 14px; font-weight: 600;
   cursor: pointer; white-space: nowrap;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-send {
