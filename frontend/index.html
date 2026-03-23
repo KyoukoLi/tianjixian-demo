@@ -66,12 +66,16 @@
 
     <!-- 诊断面板 -->
     <section class="debug-panel">
-      <h4>📡 诊断面板</h4>
+      <h4>📡 诊断面板 <button id="testBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;cursor:pointer">测试API</button></h4>
       <div id="debugLog"></div>
     </section>
 
   </main>
 
-  <script src="app.js"></script>
+  <script>
+  console.log('[天际线] Inline script running');
+  document.getElementById('debugLog').innerHTML = '<div style="color:#10b981">[天际线] 脚本已加载，API: ' + location.origin + '</div>';
+</script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
